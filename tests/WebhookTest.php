@@ -17,6 +17,14 @@ class WebhookTest extends TestCase
         $this->assertTrue(Webhook::verifyRawBody($body, $sig, $this->apiKey));
     }
 
+    public function testVerifyAliasValid(): void
+    {
+        $body = '{"order_id":"abc","status":"success"}';
+        $sig = hash_hmac('sha256', $body, $this->apiKey);
+
+        $this->assertTrue(Webhook::verify($body, $sig, ['order_id' => 'abc'], $this->apiKey));
+    }
+
     public function testVerifyRawBodyInvalid(): void
     {
         $body = '{"order_id":"abc","status":"success"}';

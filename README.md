@@ -34,6 +34,7 @@ echo $invoice['payment_url'];
 |--------|-------------|
 | `createInvoice(array $params)` | Create a new invoice |
 | `getInvoice(string $orderId)` | Get invoice by order ID |
+| `listAssets()` | List supported assets |
 | `createPermanentAddress(array $params)` | Get-or-create a permanent deposit address |
 | `getPermanentAddress(string $addressId)` | Get permanent address by ID |
 | `listPermanentAddresses(array $params = [])` | List permanent addresses |
@@ -57,6 +58,9 @@ if (!Webhook::verifyRawBody($rawBody, $sig, $_ENV['PAW_API_KEY'])) {
 $payload = Webhook::parsePayload($rawBody);
 // …handle invoice update
 ```
+
+`Webhook::verify($rawBody, $sig, $payload, $apiKey)` is also available as a
+documentation-compatible alias for `verifyRawBody`.
 
 ## Errors
 
