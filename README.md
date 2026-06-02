@@ -32,15 +32,53 @@ echo $invoice['payment_url'];
 
 | Method | Description |
 |--------|-------------|
+| `listAssets()` | List supported assets |
+| `getRates(array $params = [])` | Current exchange rates (`base`, `assets`) |
+| `getBalance()` | Merchant balance summary in USD |
+| `listLedger(array $params = [])` | Unified income/payout/refund feed (paginated) |
 | `createInvoice(array $params)` | Create a new invoice |
 | `getInvoice(string $orderId)` | Get invoice by order ID |
-| `listAssets()` | List supported assets |
+| `listInvoices(array $params = [])` | List invoices (paginated) |
+| `notifyInvoice(string $orderId)` | Resend the merchant webhook for an invoice |
+| `createPayout(array $params, ?string $uniqId = null)` | Create a single payout |
+| `createPayoutBatch(array $items, ?string $uniqId = null)` | Create up to 200 payouts at once |
+| `getPayout(string $payoutId)` | Get payout by ID |
+| `listPayouts(array $params = [])` | List payouts (paginated) |
+| `listNotifications(array $params = [])` | List webhook delivery attempts (paginated) |
+| `testNotification(?string $url = null)` | Send a test webhook |
 | `createPermanentAddress(array $params)` | Get-or-create a permanent deposit address |
 | `getPermanentAddress(string $addressId)` | Get permanent address by ID |
 | `listPermanentAddresses(array $params = [])` | List permanent addresses |
 | `deactivatePermanentAddress(string $addressId)` | Deactivate a permanent address |
 
 `createPermanentAddress` accepts `user_id` (required) plus either `family` (`evm`, `bitcoin`, `litecoin`, `bitcoincash`, `tron`, `solana`, `xrp`, `ton`) or `asset` (e.g. `usdt_trc20`), and optional `notify_url` / `metadata`.
+
+List methods (`listInvoices`, `listPayouts`, `listLedger`, `listNotifications`)
+return `['items' => [...], 'pagination' => ['page', 'per_page', 'total', 'pages']]`.
+
+## Payouts
+
+`createPayout` and `createPayoutBatch` send an `x-uniq-id` header (UUIDv4) for
+idempotency — one is generated automatically when you don't pass `$uniqId`. The
+same `uniqId` re-used within 2 hours yields a 409.
+
+Each payout (and each batch item) accepts an optional `fee_bearer` of `merchant`
+or `client` to choose who covers the network fee — defaults to `merchant`:
+
+```php
+$payout = $paw->createPayout([
+    'address'       => 'T…',
+    'amount'        => 50,
+    'fiat_currency' => 'USD',
+    'asset'         => 'usdt_tron',
+    'fee_bearer'    => 'client',
+]);
+
+$batch = $paw->createPayoutBatch([
+    ['address' => 'T…', 'amount' => 10, 'fiat_currency' => 'USD', 'asset' => 'usdt_tron'],
+    ['address' => '0x…', 'amount' => 20, 'fiat_currency' => 'USD', 'asset' => 'usdt_erc20', 'fee_bearer' => 'client'],
+]);
+```
 
 ## Webhook verification
 
