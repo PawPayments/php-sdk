@@ -100,6 +100,17 @@ $payload = Webhook::parsePayload($rawBody);
 `Webhook::verify($rawBody, $sig, $payload, $apiKey)` is also available as a
 documentation-compatible alias for `verifyRawBody`.
 
+Verification always fails for an empty API key or a header that is not exactly
+64 hex characters, so an unconfigured integration never accepts a webhook.
+
+Before settling an order on a `success` / `paid_over` webhook, check that it
+pays that order: `Webhook::coversAmount($payload, $orderCurrency, $orderTotal)`
+requires the order's currency and an invoice issued (`initial_fiat_amount`) for
+at least the order total, give or take a cent. Whether enough arrived is the
+gateway's call — it sends `success` only within the underpay tolerance you
+configured — so a slightly short `fiat_amount` still settles the order, while a
+webhook for some other, cheaper invoice whose `extra` names it never does.
+
 ## Errors
 
 All API errors (HTTP 4xx/5xx, network, invalid JSON) throw `PawPaymentsApiException`:
