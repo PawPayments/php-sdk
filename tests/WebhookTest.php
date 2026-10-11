@@ -119,6 +119,23 @@ class WebhookTest extends TestCase
         $this->assertTrue(Webhook::coversAmount(['initial_fiat_amount' => 120, 'fiat_currency' => 'USD'], 'USD', 100));
     }
 
+    public function testCoversAmountCountsTheCentExactlyForEveryAmount(): void
+    {
+        // 2.02 - 0.01 is a hair above 2.01 in binary floating point; the rule
+        // must still accept an invoice issued exactly one cent short, for every
+        // amount up to 1000.00, and refuse two cents short.
+        $this->assertTrue(Webhook::coversAmount(['initial_fiat_amount' => 2.01, 'fiat_currency' => 'USD'], 'USD', 2.02));
+        for ($cents = 2; $cents <= 100000; $cents++) {
+            $total = $cents / 100;
+            $oneShort = ['initial_fiat_amount' => ($cents - 1) / 100, 'fiat_currency' => 'USD'];
+            $twoShort = ['initial_fiat_amount' => ($cents - 2) / 100, 'fiat_currency' => 'USD'];
+            if (!Webhook::coversAmount($oneShort, 'USD', $total) || Webhook::coversAmount($twoShort, 'USD', $total)) {
+                $this->fail("wrong at total {$total}");
+            }
+        }
+        $this->addToAssertionCount(1);
+    }
+
     public function testCoversAmountRefusesAnotherCurrency(): void
     {
         $payload = ['initial_fiat_amount' => '100000', 'fiat_amount' => '100000', 'fiat_currency' => 'IDR'];
